@@ -281,7 +281,10 @@
             <div class="bg-white rounded-2xl card-shadow p-6 mb-6 border-l-4 border-purple-500">
                 <h2 class="font-bold text-lg mb-4 text-purple-900">Tambah Bahan Baru</h2>
                 <div class="flex flex-wrap gap-3 mb-6 bg-purple-50 p-4 rounded-xl border border-purple-100">
-                    <input type="text" id="dbNama" placeholder="Nama Bahan (Cth: Susu UHT)" class="flex-1 min-w-[200px] px-3 py-2 border border-purple-200 rounded-lg outline-none focus:border-purple-500">
+                    <div class="flex flex-1 min-w-[200px] gap-1">
+                        <input type="text" id="dbNama" placeholder="Nama Bahan (Cth: Susu UHT)" class="flex-1 px-3 py-2 border border-purple-200 rounded-lg outline-none focus:border-purple-500">
+                        <button onclick="cariHargaOnline()" class="px-3 py-2 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-lg border border-blue-200 transition" title="Cari Harga Online">🔍</button>
+                    </div>
                     <input type="number" id="dbBerat" placeholder="Berat Beli (gr)" class="w-32 px-3 py-2 border border-purple-200 rounded-lg text-center outline-none focus:border-purple-500">
                     <input type="number" id="dbHarga" placeholder="Harga Beli (Rp)" class="w-40 px-3 py-2 border border-purple-200 rounded-lg text-center outline-none focus:border-purple-500">
                     <button onclick="simpanKeDatabase()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition">💾 Simpan Data</button>
@@ -417,6 +420,33 @@
     </div>
 </div>
 
+<!-- Modal Search Engine (Google Shopping) -->
+<div id="searchModal" class="fixed inset-0 z-[9999] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4">
+    <div class="bg-white w-full h-full max-w-6xl rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-zoomIn">
+        <div class="p-3 border-b flex justify-between items-center bg-white shrink-0 z-10">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div class="bg-blue-100 p-2 rounded-lg text-blue-600">🛍️</div>
+                <div>
+                    <h3 class="font-bold text-gray-800 text-sm md:text-base leading-tight">Google Shopping</h3>
+                    <p class="text-xs text-gray-500 truncate max-w-[200px] md:max-w-md" id="searchKeyword">Menampilkan hasil...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a id="extLink" href="#" target="_blank" class="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-bold transition">
+                    <span>↗</span> External
+                </a>
+                <button onclick="closeSearchModal()" class="w-9 h-9 flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition">
+                    <span class="text-xl font-bold">&times;</span>
+                </button>
+            </div>
+        </div>
+        <div class="flex-1 relative bg-gray-50 w-full h-full">
+            <iframe id="searchFrame" src="about:blank" class="w-full h-full border-0" allow="fullscreen"></iframe>
+        </div>
+    </div>
+</div>
+<style>@keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } } .animate-zoomIn { animation: zoomIn 0.2s ease-out forwards; }</style>
+
 <script>
 /* =========================================================================
    SISTEM AUTENTIKASI (LOGIN & SESSION)
@@ -431,7 +461,13 @@ function getLicenseDB() {
     VALID_KEYS.forEach(k => { if (!db[k]) db[k] = { status: 'unused', email: null }; });
     return db;
 }
-function saveLicenseDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function saveLicenseDB(db) { 
+    try {
+        localStorage.setItem(DB_KEY, JSON.stringify(db)); 
+    } catch (e) {
+        alert('Gagal menyimpan data: Memori browser penuh.');
+    }
+}
 function showAlert(msg, isError = true) {
     const el = document.getElementById('alertBox');
     el.textContent = msg;
@@ -479,7 +515,11 @@ function verifikasiOTP() {
     loginSuccess(data.email);
 }
 function loginSuccess(email) {
-    localStorage.setItem(SESS_KEY, JSON.stringify({ email, expiry: Date.now() + 8640000000 }));
+    try {
+        localStorage.setItem(SESS_KEY, JSON.stringify({ email, expiry: Date.now() + 8640000000 }));
+    } catch (e) {
+        alert('Gagal login: Memori browser penuh.');
+    }
     document.getElementById('authWrapper').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
     initApp();
@@ -518,7 +558,13 @@ function switchMainTab(tabId) {
 ========================================================================= */
 let masterDB = [];
 function loadMasterDB() { masterDB = JSON.parse(localStorage.getItem('pastryPro_MasterBahan') || '[]'); renderMasterDB(); }
-function saveMasterDB() { localStorage.setItem('pastryPro_MasterBahan', JSON.stringify(masterDB)); }
+function saveMasterDB() { 
+    try {
+        localStorage.setItem('pastryPro_MasterBahan', JSON.stringify(masterDB)); 
+    } catch (e) {
+        alert('Database penuh! Hapus beberapa data lama.');
+    }
+}
 function simpanKeDatabase() {
     let nama = document.getElementById('dbNama').value.trim();
     let berat = parseFloat(document.getElementById('dbBerat').value) || 0;
@@ -527,6 +573,22 @@ function simpanKeDatabase() {
     masterDB.push({ id: Date.now(), nama, berat, harga, hpp: harga/berat });
     saveMasterDB(); renderMasterDB();
     document.getElementById('dbNama').value = ''; document.getElementById('dbBerat').value = ''; document.getElementById('dbHarga').value = '';
+}
+function cariHargaOnline() {
+    let nama = document.getElementById('dbNama').value.trim();
+    if (!nama) return alert('Ketik nama bahan yang ingin dicari harganya!');
+    
+    const query = encodeURIComponent(nama);
+    const url = 'https://www.google.com/search?tbm=shop&igu=1&q=' + query;
+    
+    document.getElementById('searchKeyword').textContent = 'Mencari: ' + nama;
+    document.getElementById('searchFrame').src = url;
+    document.getElementById('extLink').href = url.replace('&igu=1', '');
+    document.getElementById('searchModal').classList.remove('hidden');
+}
+function closeSearchModal() {
+    document.getElementById('searchModal').classList.add('hidden');
+    document.getElementById('searchFrame').src = 'about:blank';
 }
 function renderMasterDB() {
     const tbody = document.getElementById('dbTbody');
@@ -727,7 +789,11 @@ function saveHistory() {
     };
 
     historyData.unshift(snapshot);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(historyData));
+    try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(historyData));
+    } catch (e) {
+        alert('Gagal menyimpan riwayat: Memori penuh. Hapus riwayat lama.');
+    }
     renderHistory();
     alert('Riwayat kalkulasi berhasil disimpan.');
 }
@@ -848,7 +914,7 @@ function startRinging(id) {
     let iv = setInterval(playBeep, 1000);
     ringInt.set(id, iv);
 }
-function stopRinging(id) {
+function stopRinging(id) { 
     if(ringInt.has(id)) { clearInterval(ringInt.get(id)); ringInt.delete(id); }
 }
 
@@ -901,7 +967,7 @@ $$('.quick-add').forEach(b => b.onclick = () => {
     if(tState.quick.run) tState.quick.end = Date.now() + tState.quick.remainingMs;
     updateQuickUI();
 });
-$('#quickStart').onclick = () => { if(tState.quick.remainingMs>0){ tState.quick.run=true; tState.quick.ring=false; stopRinging('quick'); tState.quick.end = Date.now()+tState.quick.remainingMs; updateQuickUI();} }
+$('#quickStart').onclick = () => { initAudio(); if(tState.quick.remainingMs>0){ tState.quick.run=true; tState.quick.ring=false; stopRinging('quick'); tState.quick.end = Date.now()+tState.quick.remainingMs; updateQuickUI();} }
 $('#quickPause').onclick = () => { tState.quick.run=false; updateQuickUI(); }
 $('#quickReset').onclick = () => { tState.quick.run=false; tState.quick.ring=false; stopRinging('quick'); tState.quick.totalMs=0; tState.quick.remainingMs=0; updateQuickUI(); }
 $('#quickStop').onclick = () => { tState.quick.ring=false; stopRinging('quick'); updateQuickUI(); }
@@ -934,7 +1000,7 @@ function updateMultiUI() {
         </div>
     `).join('');
 }
-window.startTimer = (id) => { let a=tState.alarms.find(x=>x.id===id); if(a){ a.run=true; a.ring=false; stopRinging(id); a.end=Date.now()+a.rem; updateMultiUI(); }};
+window.startTimer = (id) => { initAudio(); let a=tState.alarms.find(x=>x.id===id); if(a){ a.run=true; a.ring=false; stopRinging(id); a.end=Date.now()+a.rem; updateMultiUI(); }};
 window.pauseTimer = (id) => { let a=tState.alarms.find(x=>x.id===id); if(a){ a.run=false; updateMultiUI(); }};
 window.resTimer = (id) => { let a=tState.alarms.find(x=>x.id===id); if(a){ a.run=false; a.ring=false; stopRinging(id); a.rem=a.dur; updateMultiUI(); }};
 window.delTimer = (id) => { stopRinging(id); tState.alarms = tState.alarms.filter(x=>x.id!==id); updateMultiUI(); };
@@ -948,6 +1014,14 @@ $('#btnStopAll').onclick = () => {
 
 // Kalkulator Timer Khusus
 let cDis='0', cOp=null, cPrev=null, cNew=true;
+function safeCalc(a, b, op) {
+    a = parseFloat(a); b = parseFloat(b);
+    if (op === '+') return a + b;
+    if (op === '-') return a - b;
+    if (op === '*') return a * b;
+    if (op === '/') return b === 0 ? 0 : a / b;
+    return b;
+}
 $$('.calc-btn').forEach(btn => btn.onclick = () => {
     let v = btn.dataset.calc;
     if(v>='0'&&v<='9') { if(cNew){cDis=v; cNew=false;} else{ cDis = cDis==='0'?v:cDis+v; } }
@@ -956,11 +1030,11 @@ $$('.calc-btn').forEach(btn => btn.onclick = () => {
     else if(v==='±') cDis=String(-parseFloat(cDis));
     else if(v==='%') cDis=String(parseFloat(cDis)/100);
     else if(['+','-','*','/'].includes(v)) {
-        if(cPrev!==null && cOp && !cNew) { cPrev = eval(`${cPrev}${cOp}${parseFloat(cDis)}`); cDis=String(cPrev); }
+        if(cPrev!==null && cOp && !cNew) { cPrev = safeCalc(cPrev, cDis, cOp); cDis=String(cPrev); }
         else { cPrev = parseFloat(cDis); }
         cOp=v; cNew=true;
     }
-    else if(v==='=') { if(cPrev!==null && cOp) { cDis=String(eval(`${cPrev}${cOp}${parseFloat(cDis)}`)); cPrev=null; cOp=null; cNew=true; } }
+    else if(v==='=') { if(cPrev!==null && cOp) { cDis=String(safeCalc(cPrev, cDis, cOp)); cPrev=null; cOp=null; cNew=true; } }
     $('#calcDisplay').value = cDis;
 });
 
