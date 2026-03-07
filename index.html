@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         /* =========================================================
            GLOBAL STYLES (Kalkulator & App Shell)
@@ -152,6 +153,8 @@
         </div>
         <div class="flex">
             <button class="taskbar-btn active" id="navKalkulator" onclick="switchMainTab('kalkulator')">🧮 Kalkulator</button>
+            <button class="taskbar-btn" id="navBeverage" onclick="switchMainTab('beverage')">🍹 Beverage</button>
+            <button class="taskbar-btn" id="navKitchen" onclick="switchMainTab('kitchen')">👨‍🍳 Kitchen</button>
             <button class="taskbar-btn" id="navDatabase" onclick="switchMainTab('database')">📚 Database</button>
             <button class="taskbar-btn" id="navTimer" onclick="switchMainTab('timer')">⏱️ Timer</button>
         </div>
@@ -272,6 +275,156 @@
             </div>
         </div>
 
+        <div id="tabBeverage" class="main-content-tab hidden">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-teal-800">Kalkulator HPP Beverage<br>Barista & Bartender</h1>
+                <p class="text-teal-700">Hitung HPP Minuman (Kopi, Mocktail, dll)</p>
+            </div>
+
+            <div class="mb-6 bg-white p-4 rounded-xl card-shadow border-l-4 border-teal-600">
+                <label class="block text-teal-900 font-bold mb-2">Nama Menu Minuman:</label>
+                <input type="text" id="namaProdukBev" class="w-full px-4 py-2 border border-teal-200 rounded-lg focus:border-teal-500 outline-none" placeholder="Contoh: Iced Caramel Macchiato">
+            </div>
+
+            <div id="secBahanBev" class="bg-white rounded-2xl card-shadow p-6 mb-6 border-l-4 border-teal-500">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-teal-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">1</span>
+                        <h2 class="text-xl font-semibold text-teal-800">Komposisi Bahan</h2>
+                    </div>
+                    <button onclick="switchMainTab('database')" class="text-sm bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg font-medium hover:bg-purple-200 transition">
+                        📚 Cari di Database
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full" id="bahanTableBev">
+                        <thead>
+                            <tr class="bg-teal-50 text-teal-800 text-sm">
+                                <th class="p-3 text-left rounded-l-lg">Nama Bahan</th>
+                                <th class="p-3 text-center">Berat/Vol Beli</th>
+                                <th class="p-3 text-center">Harga Beli (Rp)</th>
+                                <th class="p-3 text-center bg-teal-100">Harga/unit</th>
+                                <th class="p-3 text-center rounded-r-lg">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bahanBodyBev"></tbody>
+                    </table>
+                </div>
+                <button onclick="tambahBahanBev()" class="mt-4 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg font-medium transition">+ Tambah Baris</button>
+            </div>
+
+            <div id="secResepBev" class="bg-white rounded-2xl card-shadow p-6 mb-6 border-l-4 border-emerald-500">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">2</span>
+                    <h2 class="text-xl font-semibold text-emerald-800">Takaran Resep</h2>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-emerald-50 text-emerald-800 text-sm">
+                                <th class="p-3 text-left rounded-l-lg">Bahan</th>
+                                <th class="p-3 text-center">Harga/unit</th>
+                                <th class="p-3 text-center">Takaran (gr/ml)</th>
+                                <th class="p-3 text-center bg-emerald-100">Biaya</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resepBodyBev"></tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4 bg-emerald-50 rounded-xl p-4 flex justify-between items-center">
+                    <span class="text-emerald-800 font-semibold">Total Cost:</span>
+                    <span class="text-2xl font-bold text-emerald-700" id="totalBiayaBev">Rp 0</span>
+                </div>
+            </div>
+
+            <div id="secHasilBev" class="bg-white rounded-2xl card-shadow p-6 border-l-4 border-cyan-500">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="bg-cyan-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">3</span>
+                    <h2 class="text-xl font-semibold text-cyan-800">HPP Per Cup</h2>
+                </div>
+                <div class="bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-xl p-6 text-white text-center">
+                    <p class="text-cyan-100 mb-2">HPP Final</p>
+                    <p class="text-5xl font-bold" id="hppPerUnitBev">Rp 0</p>
+                    <div class="mt-4 flex justify-center gap-3">
+                        <button onclick="saveHistoryBev()" class="px-4 py-2 bg-white text-cyan-700 rounded-lg font-semibold shadow hover:opacity-90">💾 Simpan Riwayat</button>
+                        <button onclick="downloadPDFBev()" class="px-4 py-2 bg-teal-800 text-teal-100 rounded-lg font-semibold shadow hover:bg-teal-900">📄 Download PDF</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="historyPanelBev" class="mt-8 bg-white rounded-2xl card-shadow p-6 border-l-4 border-gray-400">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="bg-gray-400 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">R</span>
+                    <h2 class="text-xl font-semibold text-gray-800">Riwayat Beverage</h2>
+                </div>
+                <p class="text-gray-600 text-sm mb-4">Riwayat kalkulasi minuman tersimpan di sini.</p>
+                <div id="historyListBev" class="space-y-3"></div>
+                <div class="mt-4 flex gap-3">
+                    <button onclick="clearHistoryBev()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg">🗑️ Hapus Semua</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tabKitchen" class="main-content-tab hidden">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-red-800">Kalkulator HPP Kitchen<br>Yield & Shrinkage</h1>
+                <p class="text-red-700">Hitung penyusutan bahan (Berat Kotor vs Berat Bersih)</p>
+            </div>
+
+            <div class="mb-6 bg-white p-4 rounded-xl card-shadow border-l-4 border-red-600">
+                <label class="block text-red-900 font-bold mb-2">Nama Menu Makanan:</label>
+                <input type="text" id="namaProdukKitchen" class="w-full px-4 py-2 border border-red-200 rounded-lg focus:border-red-500 outline-none" placeholder="Contoh: Salmon Steak with Lemon Butter">
+            </div>
+
+            <div id="secBahanKitchen" class="bg-white rounded-2xl card-shadow p-6 mb-6 border-l-4 border-red-500">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">1</span>
+                        <h2 class="text-xl font-semibold text-red-800">Analisa Yield (Penyusutan)</h2>
+                    </div>
+                    <button onclick="switchMainTab('database')" class="text-sm bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg font-medium hover:bg-purple-200 transition">📚 Cari di Database</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm" id="bahanTableKitchen">
+                        <thead>
+                            <tr class="bg-red-50 text-red-800">
+                                <th class="p-3 text-left rounded-l-lg">Bahan</th>
+                                <th class="p-3 text-center">Berat Kotor (AP)</th>
+                                <th class="p-3 text-center">Berat Bersih (EP)</th>
+                                <th class="p-3 text-center">Yield %</th>
+                                <th class="p-3 text-center">Harga Beli (AP)</th>
+                                <th class="p-3 text-center bg-red-100">HPP Bersih/gr</th>
+                                <th class="p-3 text-center rounded-r-lg">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bahanBodyKitchen"></tbody>
+                    </table>
+                </div>
+                <button onclick="tambahBahanKitchen()" class="mt-4 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition">+ Tambah Bahan</button>
+            </div>
+
+            <div id="secResepKitchen" class="bg-white rounded-2xl card-shadow p-6 mb-6 border-l-4 border-orange-500">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="bg-orange-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">2</span>
+                    <h2 class="text-xl font-semibold text-orange-800">Resep & HPP</h2>
+                </div>
+                <div class="overflow-x-auto"><table class="w-full"><tbody id="resepBodyKitchen"></tbody></table></div>
+                <div class="mt-4 bg-orange-50 rounded-xl p-6 text-center">
+                    <p class="text-orange-800 mb-2 font-semibold">Total HPP Menu</p>
+                    <p class="text-4xl font-bold text-orange-700" id="totalBiayaKitchen">Rp 0</p>
+                    <div class="mt-4 flex justify-center gap-3">
+                        <button onclick="saveHistoryKitchen()" class="px-4 py-2 bg-white text-orange-700 rounded-lg font-semibold shadow hover:opacity-90">💾 Simpan Riwayat</button>
+                        <button onclick="downloadPDFKitchen()" class="px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold shadow hover:bg-orange-700">📄 Download PDF</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="historyPanelKitchen" class="mt-8 bg-white rounded-2xl card-shadow p-6 border-l-4 border-gray-400"><div class="flex items-center gap-2 mb-4"><span class="bg-gray-400 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">R</span><h2 class="text-xl font-semibold text-gray-800">Riwayat Kitchen</h2></div><div id="historyListKitchen" class="space-y-3"></div><div class="mt-4"><button onclick="clearHistoryKitchen()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg">🗑️ Hapus Semua</button></div></div>
+        </div>
+
         <div id="tabDatabase" class="main-content-tab hidden">
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold text-purple-800">Database Master Bahan</h1>
@@ -279,7 +432,14 @@
             </div>
 
             <div class="bg-white rounded-2xl card-shadow p-6 mb-6 border-l-4 border-purple-500">
-                <h2 class="font-bold text-lg mb-4 text-purple-900">Tambah Bahan Baru</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-lg text-purple-900">Tambah Bahan Baru</h2>
+                    <div class="flex gap-2">
+                        <button onclick="openExcelPreview()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm">👁️ Preview</button>
+                        <button onclick="exportCompleteExcel()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm"> Export Excel</button>
+                        <button onclick="downloadPDFDatabase()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm">📄 Export PDF</button>
+                    </div>
+                </div>
                 <div class="flex flex-wrap gap-3 mb-6 bg-purple-50 p-4 rounded-xl border border-purple-100">
                     <div class="flex flex-1 min-w-[200px] gap-1">
                         <input type="text" id="dbNama" placeholder="Nama Bahan (Cth: Susu UHT)" class="flex-1 px-3 py-2 border border-purple-200 rounded-lg outline-none focus:border-purple-500">
@@ -298,7 +458,7 @@
                                 <th class="p-3 text-center">Berat (gr)</th>
                                 <th class="p-3 text-center">Harga Beli</th>
                                 <th class="p-3 text-center bg-purple-200">Harga/gr</th>
-                                <th class="p-3 text-center rounded-r-lg">Gunakan di Kalkulator</th>
+                                <th class="p-3 text-center rounded-r-lg">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="dbTbody"></tbody>
@@ -417,6 +577,33 @@
             <div id="toasts" class="fixed bottom-20 left-1/2 -translate-x-1/2 w-[min(400px,90vw)] space-y-2 z-50"></div>
         </div>
 
+    </div>
+</div>
+
+<!-- Modal Preview Excel -->
+<div id="excelPreviewModal" class="fixed inset-0 z-[9999] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-5xl h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-zoomIn">
+        <div class="p-4 border-b flex justify-between items-center bg-white shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="bg-green-100 p-2 rounded-lg text-green-600">📊</div>
+                <div>
+                    <h3 class="font-bold text-gray-800">Preview Data Excel</h3>
+                    <p class="text-xs text-gray-500">Cek data sebelum di-download</p>
+                </div>
+            </div>
+            <button onclick="closeExcelPreview()" class="w-8 h-8 flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition"><span class="font-bold">&times;</span></button>
+        </div>
+        <div id="previewTabs" class="flex border-b bg-gray-50 shrink-0">
+            <button id="btnPrevDb" onclick="switchPreviewTab('db')" class="flex-1 py-3 font-semibold text-sm text-gray-500 hover:bg-gray-100 transition-colors">📚 Database</button>
+            <button id="btnPrevPastry" onclick="switchPreviewTab('pastry')" class="flex-1 py-3 font-semibold text-sm text-gray-500 hover:bg-gray-100 transition-colors">🥐 Pastry Calc</button>
+            <button id="btnPrevBev" onclick="switchPreviewTab('bev')" class="flex-1 py-3 font-semibold text-sm text-gray-500 hover:bg-gray-100 transition-colors">🍹 Beverage Calc</button>
+            <button id="btnPrevKitchen" onclick="switchPreviewTab('kitchen')" class="flex-1 py-3 font-semibold text-sm text-gray-500 hover:bg-gray-100 transition-colors">👨‍🍳 Kitchen Calc</button>
+        </div>
+        <div id="previewContent" class="flex-1 overflow-auto bg-gray-50 p-0"></div>
+        <div class="p-4 border-t bg-white shrink-0 flex justify-end gap-2">
+            <button onclick="closeExcelPreview()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium">Tutup</button>
+            <button id="btnDownloadExcel" onclick="exportCompleteExcel()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-sm flex items-center gap-2"><span>📥</span> Download .xlsx</button>
+        </div>
     </div>
 </div>
 
@@ -590,6 +777,195 @@ function closeSearchModal() {
     document.getElementById('searchModal').classList.add('hidden');
     document.getElementById('searchFrame').src = 'about:blank';
 }
+function exportCompleteExcel() {
+    if (typeof XLSX === 'undefined') {
+        alert('Library Excel belum siap. Pastikan internet aktif untuk memuat fitur ini.');
+        return;
+    }
+    const wb = XLSX.utils.book_new();
+
+    // --- SHEET 1: DATABASE ---
+    let dataDB = [];
+    if (masterDB.length > 0) {
+        dataDB = masterDB.map(item => ({
+            "Nama Bahan": item.nama,
+            "Berat Beli (gr/ml)": item.berat,
+            "Harga Beli (Rp)": item.harga,
+            "HPP per Unit (Rp)": "Rp " + Math.round(item.hpp || 0).toLocaleString('id-ID')
+        }));
+    } else {
+        dataDB = [{"Info": "Database Kosong"}];
+    }
+    const wsDB = XLSX.utils.json_to_sheet(dataDB);
+    XLSX.utils.book_append_sheet(wb, wsDB, "Database");
+
+    // --- SHEET 2: PASTRY ---
+    const headersPastry = ["Bahan", "Berat Beli", "Harga Beli", "HPP Dasar", "Resep (gr)", "Biaya (Rp)"];
+    let rowsPastry = [];
+
+    // Active Calculator
+    rowsPastry.push(["[KALKULATOR AKTIF]", "", "", "", "", ""]);
+    
+    let rawItemsPastry = bahanKalkulator.filter(b => b.nama).map(b => {
+        let pakai = resepKalkulator[b.id] || 0;
+        return { ...b, pakai, biaya: b.hpp * pakai };
+    });
+    
+    rawItemsPastry.forEach(b => {
+        rowsPastry.push([
+            b.nama,
+            b.berat + ' gr',
+            'Rp ' + b.harga.toLocaleString('id-ID'),
+            'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'),
+            b.pakai,
+            'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+        ]);
+    });
+
+    let totalPastry = rawItemsPastry.reduce((a,b)=>a+b.biaya,0);
+    let unitPastry = parseFloat(document.getElementById('jumlahUnitKalkulator').value) || 1;
+    
+    rowsPastry.push(["---", "---", "---", "---", "---", "---"]);
+    rowsPastry.push(["TOTAL BIAYA", "", "", "", "", `Rp ${Math.round(totalPastry).toLocaleString('id-ID')}`]);
+    rowsPastry.push(["JUMLAH UNIT", "", "", "", "", unitPastry]);
+    rowsPastry.push(["HPP PER UNIT", "", "", "", "", `Rp ${Math.round(totalPastry/unitPastry).toLocaleString('id-ID')}`]);
+    
+    // History Pastry
+    if(historyData.length > 0) {
+        rowsPastry.push(["", "", "", "", "", ""]);
+        rowsPastry.push(["[RIWAYAT TERSIMPAN]", "", "", "", "", ""]);
+        
+        historyData.forEach(h => {
+            rowsPastry.push(["", "", "", "", "", ""]);
+            rowsPastry.push([`📂 ${h.namaProduk || 'Tanpa Nama'}`, `Tanggal: ${formatDateTime(h.timestamp)}`, "", "", "", ""]);
+            
+            let hItems = h.bahanKalkulator.filter(b => b.nama).map(b => {
+                let pakai = h.resepKalkulator[b.id] || 0;
+                return { ...b, pakai, biaya: b.hpp * pakai };
+            });
+            
+            hItems.forEach(b => {
+                rowsPastry.push([
+                    b.nama,
+                    b.berat + ' gr',
+                    'Rp ' + b.harga.toLocaleString('id-ID'),
+                    'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'),
+                    b.pakai,
+                    'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+                ]);
+            });
+            
+            rowsPastry.push(["---", "---", "---", "---", "---", "---"]);
+            rowsPastry.push(["TOTAL BIAYA", "", "", "", "", `Rp ${Math.round(h.totalBiaya).toLocaleString('id-ID')}`]);
+            rowsPastry.push(["HPP PER UNIT", "", "", "", "", `Rp ${Math.round(h.hppPerUnit).toLocaleString('id-ID')}`]);
+        });
+    }
+    
+    const wsPastry = XLSX.utils.aoa_to_sheet([headersPastry, ...rowsPastry]);
+    XLSX.utils.book_append_sheet(wb, wsPastry, "Pastry");
+
+    // --- SHEET 3: BEVERAGE ---
+    const headersBev = ["Bahan", "Berat Beli", "Harga Beli", "HPP Dasar", "Resep (gr/ml)", "Biaya (Rp)"];
+    let rowsBev = [];
+
+    // Active Calculator
+    rowsBev.push(["[KALKULATOR AKTIF]", "", "", "", "", ""]);
+
+    let rawItemsBev = bahanKalkulatorBev.filter(b => b.nama).map(b => {
+        let pakai = resepKalkulatorBev[b.id] || 0;
+        return { ...b, pakai, biaya: b.hpp * pakai };
+    });
+    
+    rawItemsBev.forEach(b => {
+        rowsBev.push([
+            b.nama,
+            b.berat + ' gr/ml',
+            'Rp ' + b.harga.toLocaleString('id-ID'),
+            'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'),
+            b.pakai,
+            'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+        ]);
+    });
+    
+    let totalBev = rawItemsBev.reduce((a,b)=>a+b.biaya,0);
+
+    rowsBev.push(["---", "---", "---", "---", "---", "---"]);
+    rowsBev.push(["TOTAL HPP", "", "", "", "", `Rp ${Math.round(totalBev).toLocaleString('id-ID')}`]);
+
+    // History Beverage
+    if(historyDataBev.length > 0) {
+        rowsBev.push(["", "", "", "", "", ""]);
+        rowsBev.push(["[RIWAYAT TERSIMPAN]", "", "", "", "", ""]);
+        
+        historyDataBev.forEach(h => {
+            rowsBev.push(["", "", "", "", "", ""]);
+            rowsBev.push([`📂 ${h.namaProduk || 'Tanpa Nama'}`, `Tanggal: ${formatDateTime(h.timestamp)}`, "", "", "", ""]);
+            
+            let hItems = h.bahanKalkulatorBev.filter(b => b.nama).map(b => {
+                let pakai = h.resepKalkulatorBev[b.id] || 0;
+                return { ...b, pakai, biaya: b.hpp * pakai };
+            });
+            
+            hItems.forEach(b => {
+                rowsBev.push([
+                    b.nama,
+                    b.berat + ' gr/ml',
+                    'Rp ' + b.harga.toLocaleString('id-ID'),
+                    'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'),
+                    b.pakai,
+                    'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+                ]);
+            });
+            
+            rowsBev.push(["---", "---", "---", "---", "---", "---"]);
+            rowsBev.push(["TOTAL HPP", "", "", "", "", `Rp ${Math.round(h.totalBiaya).toLocaleString('id-ID')}`]);
+        });
+    }
+
+    const wsBev = XLSX.utils.aoa_to_sheet([headersBev, ...rowsBev]);
+    XLSX.utils.book_append_sheet(wb, wsBev, "Beverage");
+
+    // --- SHEET 4: KITCHEN ---
+    const headersKit = ["Bahan", "Berat Kotor (AP)", "Berat Bersih (EP)", "Yield %", "Harga Beli (AP)", "HPP Bersih/gr", "Resep (gr)", "Biaya (Rp)"];
+    let rowsKit = [];
+    rowsKit.push(["[KALKULATOR AKTIF]", "", "", "", "", "", "", ""]);
+    
+    let rawItemsKit = bahanKalkulatorKitchen.filter(b => b.nama).map(b => {
+        let pakai = resepKalkulatorKitchen[b.id] || 0;
+        return { ...b, pakai, biaya: b.hpp * pakai };
+    });
+    rawItemsKit.forEach(b => {
+        let yieldPct = (b.ap > 0) ? ((b.ep / b.ap) * 100).toFixed(1) : 0;
+        rowsKit.push([b.nama, b.ap+' gr', b.ep+' gr', yieldPct+'%', 'Rp '+b.harga.toLocaleString('id-ID'), 'Rp '+Math.round(b.hpp).toLocaleString('id-ID'), b.pakai, 'Rp '+Math.round(b.biaya).toLocaleString('id-ID')]);
+    });
+    let totalKit = rawItemsKit.reduce((a,b)=>a+b.biaya,0);
+    rowsKit.push(["---", "---", "---", "---", "---", "---", "---", "---"]);
+    rowsKit.push(["TOTAL HPP", "", "", "", "", "", "", `Rp ${Math.round(totalKit).toLocaleString('id-ID')}`]);
+
+    if(historyDataKitchen.length > 0) {
+        rowsKit.push(["", "", "", "", "", "", "", ""]);
+        rowsKit.push(["[RIWAYAT TERSIMPAN]", "", "", "", "", "", "", ""]);
+        historyDataKitchen.forEach(h => {
+            rowsKit.push(["", "", "", "", "", "", "", ""]);
+            rowsKit.push([`📂 ${h.namaProduk || 'Tanpa Nama'}`, `Tanggal: ${formatDateTime(h.timestamp)}`, "", "", "", "", "", ""]);
+            let hItems = h.bahanKalkulatorKitchen.filter(b => b.nama).map(b => {
+                let pakai = h.resepKalkulatorKitchen[b.id] || 0;
+                return { ...b, pakai, biaya: b.hpp * pakai };
+            });
+            hItems.forEach(b => {
+                let yieldPct = (b.ap > 0) ? ((b.ep / b.ap) * 100).toFixed(1) : 0;
+                rowsKit.push([b.nama, b.ap+' gr', b.ep+' gr', yieldPct+'%', 'Rp '+b.harga.toLocaleString('id-ID'), 'Rp '+Math.round(b.hpp).toLocaleString('id-ID'), b.pakai, 'Rp '+Math.round(b.biaya).toLocaleString('id-ID')]);
+            });
+            rowsKit.push(["---", "---", "---", "---", "---", "---", "---", "---"]);
+            rowsKit.push(["TOTAL HPP", "", "", "", "", "", "", `Rp ${Math.round(h.totalBiaya).toLocaleString('id-ID')}`]);
+        });
+    }
+    const wsKit = XLSX.utils.aoa_to_sheet([headersKit, ...rowsKit]);
+    XLSX.utils.book_append_sheet(wb, wsKit, "Kitchen");
+
+    // DOWNLOAD FILE
+    XLSX.writeFile(wb, "PastryPro_Data_Lengkap.xlsx");
+}
 function renderMasterDB() {
     const tbody = document.getElementById('dbTbody');
     if (masterDB.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">Database kosong.</td></tr>`;
@@ -599,26 +975,49 @@ function renderMasterDB() {
             <td class="p-3 text-center">${b.berat} gr</td>
             <td class="p-3 text-center">Rp ${b.harga.toLocaleString('id-ID')}</td>
             <td class="p-3 text-center font-bold text-purple-700">Rp ${b.hpp.toFixed(1)}</td>
-            <td class="p-3 text-center">
-                <button onclick="pindahkanKeKalkulator(${b.id})" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-1.5 rounded font-medium shadow-sm transition">➕ Pakai</button>
+            <td class="p-3 text-center flex justify-center gap-2">
+                <button onclick="pindahkanKeKalkulator(${b.id}, 'pastry')" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded font-medium shadow-sm transition text-xs" title="Kirim ke Pastry">🥐 Pastry</button>
+                <button onclick="pindahkanKeKalkulator(${b.id}, 'beverage')" class="bg-teal-500 hover:bg-teal-600 text-white px-3 py-1.5 rounded font-medium shadow-sm transition text-xs" title="Kirim ke Beverage">🍹 Bar</button>
+                <button onclick="pindahkanKeKalkulator(${b.id}, 'kitchen')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded font-medium shadow-sm transition text-xs" title="Kirim ke Kitchen">👨‍🍳 Kitchen</button>
             </td>
         </tr>
     `).join('');
 }
-function pindahkanKeKalkulator(id) {
+function pindahkanKeKalkulator(id, type) {
     const bahan = masterDB.find(b => b.id === id);
     if (!bahan) return;
     
-    // Cari baris kosong di kalkulator
-    let targetRow = bahanKalkulator.find(b => b.nama === '' && b.berat === 0);
-    if (targetRow) {
-        targetRow.nama = bahan.nama; targetRow.berat = bahan.berat; targetRow.harga = bahan.harga; targetRow.hpp = bahan.hpp;
+    let targetArray, renderFunc, tabName;
+    if (type === 'beverage') {
+        targetArray = bahanKalkulatorBev;
+        renderFunc = renderKalkulatorBev;
+        tabName = 'beverage';
+    } else if (type === 'kitchen') {
+        targetArray = bahanKalkulatorKitchen;
+        renderFunc = renderKalkulatorKitchen;
+        tabName = 'kitchen';
     } else {
-        bahanKalkulator.push({ id: Date.now() + Math.random(), nama: bahan.nama, berat: bahan.berat, harga: bahan.harga, hpp: bahan.hpp });
+        targetArray = bahanKalkulator;
+        renderFunc = renderKalkulator;
+        tabName = 'kalkulator';
+    }
+
+    // Cari baris kosong di kalkulator
+    let targetRow = targetArray.find(b => b.nama === '' && b.berat === 0);
+    if (targetRow) {
+        targetRow.nama = bahan.nama; 
+        if(type === 'kitchen') { targetRow.ap = bahan.berat; targetRow.ep = bahan.berat; targetRow.harga = bahan.harga; targetRow.hpp = bahan.hpp; }
+        else { targetRow.berat = bahan.berat; targetRow.harga = bahan.harga; targetRow.hpp = bahan.hpp; }
+    } else {
+        if(type === 'kitchen') {
+            targetArray.push({ id: Date.now(), nama: bahan.nama, ap: bahan.berat, ep: bahan.berat, harga: bahan.harga, hpp: bahan.hpp });
+        } else {
+            targetArray.push({ id: Date.now(), nama: bahan.nama, berat: bahan.berat, harga: bahan.harga, hpp: bahan.hpp });
+        }
     }
     
-    renderKalkulator();
-    switchMainTab('kalkulator'); // PINDAH TAB OTOMATIS
+    renderFunc();
+    switchMainTab(tabName); // PINDAH TAB OTOMATIS
 }
 
 /* =========================================================================
@@ -696,6 +1095,129 @@ function resetKalkulator() {
     }
 }
 
+/* =========================================================================
+   KALKULATOR BEVERAGE LOGIC (BARISTA)
+========================================================================= */
+let bahanKalkulatorBev = [];
+let resepKalkulatorBev = {};
+
+function tambahBahanBev() {
+    bahanKalkulatorBev.push({ id: Date.now(), nama: '', berat: 0, harga: 0, hpp: 0 });
+    renderKalkulatorBev();
+}
+function ubahBahanBev(id, field, value) {
+    let b = bahanKalkulatorBev.find(x => x.id === id);
+    if(b) {
+        b[field] = value;
+        if (b.berat > 0 && b.harga > 0) b.hpp = b.harga / b.berat;
+        renderKalkulatorBev();
+    }
+}
+function hapusBahanBev(id) {
+    bahanKalkulatorBev = bahanKalkulatorBev.filter(x => x.id !== id);
+    delete resepKalkulatorBev[id];
+    renderKalkulatorBev();
+}
+function ubahResepBev(id, value) {
+    resepKalkulatorBev[id] = parseFloat(value) || 0;
+    renderKalkulatorBev();
+}
+function renderKalkulatorBev() {
+    // Tabel Bahan
+    document.getElementById('bahanBodyBev').innerHTML = bahanKalkulatorBev.map(b => `
+        <tr class="border-b border-teal-100 bg-white">
+            <td class="p-2"><input class="w-full border p-2 rounded" placeholder="Nama..." value="${b.nama}" onchange="ubahBahanBev(${b.id}, 'nama', this.value)"></td>
+            <td class="p-2"><input class="w-full border p-2 rounded text-center" type="number" placeholder="0" value="${b.berat || ''}" onchange="ubahBahanBev(${b.id}, 'berat', parseFloat(this.value))"></td>
+            <td class="p-2"><input class="w-full border p-2 rounded text-center" type="number" placeholder="0" value="${b.harga || ''}" onchange="ubahBahanBev(${b.id}, 'harga', parseFloat(this.value))"></td>
+            <td class="p-2 text-center font-bold text-teal-700">Rp ${b.hpp.toFixed(1)}</td>
+            <td class="p-2 text-center"><button onclick="hapusBahanBev(${b.id})" class="text-red-500 font-bold hover:bg-red-50 px-2 py-1 rounded">X</button></td>
+        </tr>
+    `).join('');
+
+    // Tabel Resep & Total
+    let totalBiaya = 0;
+    document.getElementById('resepBodyBev').innerHTML = bahanKalkulatorBev.filter(b => b.nama).map(b => {
+        let pakai = resepKalkulatorBev[b.id] || 0;
+        let biaya = b.hpp * pakai;
+        totalBiaya += biaya;
+        return `<tr class="border-b border-emerald-100 bg-white"><td class="p-3 font-medium text-gray-700">${b.nama}</td><td class="p-3 text-center text-gray-500">Rp ${b.hpp.toFixed(1)}</td><td class="p-3"><input type="number" class="w-full border p-2 rounded text-center border-emerald-300" placeholder="gr/ml" value="${pakai || ''}" onchange="ubahResepBev(${b.id}, this.value)"></td><td class="p-3 text-center font-bold text-emerald-700">Rp ${Math.round(biaya).toLocaleString('id-ID')}</td></tr>`;
+    }).join('');
+    
+    document.getElementById('totalBiayaBev').textContent = 'Rp ' + Math.round(totalBiaya).toLocaleString('id-ID');
+    document.getElementById('hppPerUnitBev').textContent = 'Rp ' + Math.round(totalBiaya).toLocaleString('id-ID');
+}
+
+/* =========================================================================
+   KALKULATOR KITCHEN LOGIC (YIELD)
+========================================================================= */
+let bahanKalkulatorKitchen = [];
+let resepKalkulatorKitchen = {};
+
+function tambahBahanKitchen() {
+    bahanKalkulatorKitchen.push({ id: Date.now(), nama: '', ap: 0, ep: 0, harga: 0, hpp: 0 });
+    renderKalkulatorKitchen();
+}
+function ubahBahanKitchen(id, field, value) {
+    let b = bahanKalkulatorKitchen.find(x => x.id === id);
+    if(b) {
+        b[field] = value;
+        // Logic Yield: HPP Bersih = Harga Beli / Berat Bersih (EP)
+        if (b.ep > 0 && b.harga > 0) b.hpp = b.harga / b.ep;
+        else b.hpp = 0;
+        renderKalkulatorKitchen();
+    }
+}
+function hapusBahanKitchen(id) {
+    bahanKalkulatorKitchen = bahanKalkulatorKitchen.filter(x => x.id !== id);
+    delete resepKalkulatorKitchen[id];
+    renderKalkulatorKitchen();
+}
+function ubahResepKitchen(id, value) {
+    resepKalkulatorKitchen[id] = parseFloat(value) || 0;
+    renderKalkulatorKitchen();
+}
+function renderKalkulatorKitchen() {
+    // Tabel 1: Analisa Yield
+    document.getElementById('bahanBodyKitchen').innerHTML = bahanKalkulatorKitchen.map(b => {
+        let yieldPct = (b.ap > 0) ? ((b.ep / b.ap) * 100).toFixed(1) : 0;
+        return `
+        <tr class="border-b border-red-100 bg-white">
+            <td class="p-2"><input class="w-full border p-2 rounded" placeholder="Nama..." value="${b.nama}" onchange="ubahBahanKitchen(${b.id}, 'nama', this.value)"></td>
+            <td class="p-2"><input class="w-full border p-2 rounded text-center" type="number" placeholder="AP (gr)" value="${b.ap || ''}" onchange="ubahBahanKitchen(${b.id}, 'ap', parseFloat(this.value))"></td>
+            <td class="p-2"><input class="w-full border p-2 rounded text-center" type="number" placeholder="EP (gr)" value="${b.ep || ''}" onchange="ubahBahanKitchen(${b.id}, 'ep', parseFloat(this.value))"></td>
+            <td class="p-2 text-center font-bold text-gray-500">${yieldPct}%</td>
+            <td class="p-2"><input class="w-full border p-2 rounded text-center" type="number" placeholder="Rp" value="${b.harga || ''}" onchange="ubahBahanKitchen(${b.id}, 'harga', parseFloat(this.value))"></td>
+            <td class="p-2 text-center font-bold text-red-700">Rp ${b.hpp.toFixed(1)}</td>
+            <td class="p-2 text-center"><button onclick="hapusBahanKitchen(${b.id})" class="text-red-500 font-bold hover:bg-red-50 px-2 py-1 rounded">X</button></td>
+        </tr>`;
+    }).join('');
+
+    // Tabel 2: Resep
+    let totalBiaya = 0;
+    const resepHTML = bahanKalkulatorKitchen.filter(b => b.nama).map(b => {
+        let pakai = resepKalkulatorKitchen[b.id] || 0;
+        let biaya = b.hpp * pakai;
+        totalBiaya += biaya;
+        return `
+            <tr class="border-b border-orange-100 bg-white">
+                <td class="p-3 font-medium text-gray-700 w-1/3">${b.nama}</td>
+                <td class="p-3 text-center text-gray-500 w-1/4">HPP: Rp ${b.hpp.toFixed(1)}/gr</td>
+                <td class="p-3 w-1/4"><input type="number" class="w-full border p-2 rounded text-center border-orange-300" placeholder="Gramasi Resep" value="${pakai || ''}" onchange="ubahResepKitchen(${b.id}, this.value)"></td>
+                <td class="p-3 text-center font-bold text-orange-700 w-1/6">Rp ${Math.round(biaya).toLocaleString('id-ID')}</td>
+            </tr>
+        `;
+    });
+    document.getElementById('resepBodyKitchen').innerHTML = resepHTML.length ? `
+        <thead><tr class="bg-orange-50 text-orange-800 text-sm"><th class="p-3 text-left">Bahan</th><th class="p-3 text-center">HPP Bersih</th><th class="p-3 text-center">Resep (gr)</th><th class="p-3 text-center">Biaya</th></tr></thead>
+        <tbody>${resepHTML.join('')}</tbody>
+    ` : `<div class="p-4 text-center text-gray-400">Input bahan di tabel atas untuk mulai meracik resep.</div>`;
+    
+    document.getElementById('totalBiayaKitchen').textContent = 'Rp ' + Math.round(totalBiaya).toLocaleString('id-ID');
+}
+
+/* =========================================================================
+   PDF & EXCEL EXPORT
+========================================================================= */
 async function downloadPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -730,7 +1252,366 @@ async function downloadPDF() {
     doc.setTextColor(217, 119, 6); doc.setFont("helvetica", "bold");
     doc.text(`HPP Per Unit: ${hpp}`, 14, finalY + 15);
 
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text("© Pastry Calc", 14, doc.internal.pageSize.getHeight() - 10);
+
     doc.save(`HPP_${namaProduk.replace(/\s+/g, '_')}.pdf`);
+}
+
+async function downloadPDFBev() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    const namaProduk = document.getElementById('namaProdukBev').value || 'Tanpa Nama';
+    const totalBiaya = document.getElementById('totalBiayaBev').textContent;
+    const hpp = document.getElementById('hppPerUnitBev').textContent;
+
+    doc.setFontSize(18);
+    doc.text("Laporan HPP Beverage - Pastry Pro", 14, 20);
+    
+    doc.setFontSize(12);
+    doc.text(`Menu: ${namaProduk}`, 14, 30);
+    doc.text(`Tanggal: ${new Date().toLocaleDateString('id-ID')}`, 14, 36);
+
+    const headers = [["Bahan", "Harga/Unit", "Takaran", "Biaya"]];
+    const data = bahanKalkulatorBev.filter(b => b.nama).map(b => {
+        const pakai = resepKalkulatorBev[b.id] || 0;
+        const biaya = b.hpp * pakai;
+        return [b.nama, 'Rp ' + b.hpp.toFixed(1), pakai + ' gr/ml', 'Rp ' + Math.round(biaya).toLocaleString('id-ID')];
+    });
+
+    doc.autoTable({ startY: 45, head: headers, body: data, theme: 'grid', headStyles: { fillColor: [20, 184, 166] } });
+
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(11);
+    doc.text(`Total Cost: ${totalBiaya}`, 14, finalY);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(20, 184, 166); doc.setFont("helvetica", "bold");
+    doc.text(`HPP Per Cup: ${hpp}`, 14, finalY + 10);
+
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text("© Beverage Calc", 14, doc.internal.pageSize.getHeight() - 10);
+
+    doc.save(`HPP_Bev_${namaProduk.replace(/\s+/g, '_')}.pdf`);
+}
+
+async function downloadPDFKitchen() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    const namaProduk = document.getElementById('namaProdukKitchen').value || 'Tanpa Nama';
+    const totalBiaya = document.getElementById('totalBiayaKitchen').textContent;
+
+    doc.setFontSize(18);
+    doc.text("Laporan HPP Kitchen - Pastry Pro", 14, 20);
+    
+    doc.setFontSize(12);
+    doc.text(`Menu: ${namaProduk}`, 14, 30);
+    doc.text(`Tanggal: ${new Date().toLocaleDateString('id-ID')}`, 14, 36);
+
+    const headers = [["Bahan", "AP", "EP", "Yield", "HPP Bersih", "Resep", "Biaya"]];
+    const data = bahanKalkulatorKitchen.filter(b => b.nama).map(b => {
+        const pakai = resepKalkulatorKitchen[b.id] || 0;
+        const biaya = b.hpp * pakai;
+        let yieldPct = (b.ap > 0) ? ((b.ep / b.ap) * 100).toFixed(1) + '%' : '0%';
+        return [b.nama, b.ap + ' gr', b.ep + ' gr', yieldPct, 'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'), pakai + ' gr', 'Rp ' + Math.round(biaya).toLocaleString('id-ID')];
+    });
+
+    doc.autoTable({ startY: 45, head: headers, body: data, theme: 'grid', headStyles: { fillColor: [220, 38, 38] } });
+
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(14);
+    doc.setTextColor(220, 38, 38); doc.setFont("helvetica", "bold");
+    doc.text(`Total HPP Menu: ${totalBiaya}`, 14, finalY);
+
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text("© Kitchen Calc", 14, doc.internal.pageSize.getHeight() - 10);
+
+    doc.save(`HPP_Kitchen_${namaProduk.replace(/\s+/g, '_')}.pdf`);
+}
+
+async function downloadPDFDatabase() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // --- PAGE 1: DATABASE ---
+    doc.setFontSize(18);
+    doc.text("Laporan Database Bahan - Pastry Pro", 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 26);
+
+    const headersDB = [["No", "Nama Bahan", "Berat Beli", "Harga Beli", "Harga/gr"]];
+    const dataDB = masterDB.map((item, index) => [
+        index + 1,
+        item.nama,
+        item.berat + ' gr',
+        'Rp ' + item.harga.toLocaleString('id-ID'),
+        'Rp ' + item.hpp.toFixed(1)
+    ]);
+
+    doc.autoTable({
+        startY: 35,
+        head: headersDB,
+        body: dataDB,
+        theme: 'grid',
+        headStyles: { fillColor: [147, 51, 234] },
+        styles: { fontSize: 10 }
+    });
+
+    // --- PASTRY SECTION ---
+    
+    // Active Pastry
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.setTextColor(217, 119, 6); // Amber/Orange
+    doc.text("Pastry Calculator: Active Session", 14, 20);
+    
+    let rawPastry = bahanKalkulator.filter(b => b.nama).map(b => {
+        let pakai = resepKalkulator[b.id] || 0;
+        return { ...b, pakai, biaya: b.hpp * pakai };
+    });
+    let totalPastry = rawPastry.reduce((a,b)=>a+b.biaya,0);
+    let unitPastry = parseFloat(document.getElementById('jumlahUnitKalkulator').value) || 1;
+    let namaPastry = document.getElementById('namaProduk').value || "Tanpa Nama";
+
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text(`Produk: ${namaPastry}`, 14, 30);
+    
+    const headersPastry = [["Bahan", "Berat Beli", "Harga Beli", "HPP Dasar", "Resep", "Biaya"]];
+    let dataPastry = rawPastry.map(b => [
+        b.nama, 
+        b.berat + ' gr', 
+        'Rp ' + b.harga.toLocaleString('id-ID'), 
+        'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'), 
+        b.pakai + ' gr', 
+        'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+    ]);
+
+    doc.autoTable({
+        startY: 35,
+        head: headersPastry,
+        body: dataPastry,
+        theme: 'grid',
+        headStyles: { fillColor: [217, 119, 6] },
+        styles: { fontSize: 10 }
+    });
+    
+    let finalY = doc.lastAutoTable.finalY + 10;
+    doc.text(`Total Biaya: Rp ${Math.round(totalPastry).toLocaleString('id-ID')}`, 14, finalY);
+    doc.text(`HPP Per Unit (${unitPastry} unit): Rp ${Math.round(totalPastry/unitPastry).toLocaleString('id-ID')}`, 14, finalY + 6);
+
+    // History Pastry
+    historyData.forEach(h => {
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.setTextColor(217, 119, 6);
+        doc.text(`Pastry History: ${h.namaProduk || 'Tanpa Nama'}`, 14, 20);
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Disimpan: ${formatDateTime(h.timestamp)}`, 14, 26);
+
+        let hItems = h.bahanKalkulator.filter(b => b.nama).map(b => {
+            let pakai = h.resepKalkulator[b.id] || 0;
+            return { ...b, pakai, biaya: b.hpp * pakai };
+        });
+        
+        let hData = hItems.map(b => [
+            b.nama, 
+            b.berat + ' gr', 
+            'Rp ' + b.harga.toLocaleString('id-ID'), 
+            'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'), 
+            b.pakai + ' gr', 
+            'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+        ]);
+
+        doc.autoTable({
+            startY: 35,
+            head: headersPastry,
+            body: hData,
+            theme: 'grid',
+            headStyles: { fillColor: [217, 119, 6] },
+            styles: { fontSize: 10 }
+        });
+        
+        finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(12);
+        doc.setTextColor(0);
+        doc.text(`Total Biaya: Rp ${Math.round(h.totalBiaya).toLocaleString('id-ID')}`, 14, finalY);
+        doc.text(`HPP Per Unit: Rp ${Math.round(h.hppPerUnit).toLocaleString('id-ID')}`, 14, finalY + 6);
+    });
+
+    // --- BEVERAGE SECTION ---
+    // Active Beverage
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.setTextColor(20, 184, 166); // Teal
+    doc.text("Beverage Calculator: Active Session", 14, 20);
+    
+    let rawBev = bahanKalkulatorBev.filter(b => b.nama).map(b => {
+        let pakai = resepKalkulatorBev[b.id] || 0;
+        return { ...b, pakai, biaya: b.hpp * pakai };
+    });
+    let totalBev = rawBev.reduce((a,b)=>a+b.biaya,0);
+    let namaBev = document.getElementById('namaProdukBev').value || "Tanpa Nama";
+
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text(`Menu: ${namaBev}`, 14, 30);
+
+    const headersBev = [["Bahan", "Berat Beli", "Harga Beli", "HPP Dasar", "Resep", "Biaya"]];
+    let dataBev = rawBev.map(b => [
+        b.nama, 
+        b.berat + ' gr/ml', 
+        'Rp ' + b.harga.toLocaleString('id-ID'), 
+        'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'), 
+        b.pakai + ' gr/ml', 
+        'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+    ]);
+
+    doc.autoTable({
+        startY: 35,
+        head: headersBev,
+        body: dataBev,
+        theme: 'grid',
+        headStyles: { fillColor: [20, 184, 166] },
+        styles: { fontSize: 10 }
+    });
+    
+    finalY = doc.lastAutoTable.finalY + 10;
+    doc.text(`Total HPP: Rp ${Math.round(totalBev).toLocaleString('id-ID')}`, 14, finalY);
+
+    // History Beverage
+    historyDataBev.forEach(h => {
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.setTextColor(20, 184, 166);
+        doc.text(`Beverage History: ${h.namaProduk || 'Tanpa Nama'}`, 14, 20);
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Disimpan: ${formatDateTime(h.timestamp)}`, 14, 26);
+
+        let hItems = h.bahanKalkulatorBev.filter(b => b.nama).map(b => {
+            let pakai = h.resepKalkulatorBev[b.id] || 0;
+            return { ...b, pakai, biaya: b.hpp * pakai };
+        });
+        
+        let hData = hItems.map(b => [
+            b.nama, 
+            b.berat + ' gr/ml', 
+            'Rp ' + b.harga.toLocaleString('id-ID'), 
+            'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'), 
+            b.pakai + ' gr/ml', 
+            'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+        ]);
+
+        doc.autoTable({
+            startY: 35,
+            head: headersBev,
+            body: hData,
+            theme: 'grid',
+            headStyles: { fillColor: [20, 184, 166] },
+            styles: { fontSize: 10 }
+        });
+        
+        finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(12);
+        doc.setTextColor(0);
+        doc.text(`Total HPP: Rp ${Math.round(h.totalBiaya).toLocaleString('id-ID')}`, 14, finalY);
+    });
+
+    // --- KITCHEN SECTION ---
+    // Active Kitchen
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.setTextColor(220, 38, 38); // Red
+    doc.text("Kitchen Calculator: Active Session", 14, 20);
+    
+    let rawKit = bahanKalkulatorKitchen.filter(b => b.nama).map(b => {
+        let pakai = resepKalkulatorKitchen[b.id] || 0;
+        return { ...b, pakai, biaya: b.hpp * pakai };
+    });
+    let totalKit = rawKit.reduce((a,b)=>a+b.biaya,0);
+    let namaKit = document.getElementById('namaProdukKitchen').value || "Tanpa Nama";
+
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text(`Menu: ${namaKit}`, 14, 30);
+
+    const headersKit = [["Bahan", "AP", "EP", "Yield", "HPP Bersih", "Resep", "Biaya"]];
+    let dataKit = rawKit.map(b => {
+        let yieldPct = (b.ap > 0) ? ((b.ep / b.ap) * 100).toFixed(1) : 0;
+        return [
+            b.nama, 
+            b.ap + ' gr', 
+            b.ep + ' gr', 
+            yieldPct + '%', 
+            'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'), 
+            b.pakai + ' gr', 
+            'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+        ];
+    });
+
+    doc.autoTable({
+        startY: 35,
+        head: headersKit,
+        body: dataKit,
+        theme: 'grid',
+        headStyles: { fillColor: [220, 38, 38] },
+        styles: { fontSize: 10 }
+    });
+    
+    finalY = doc.lastAutoTable.finalY + 10;
+    doc.text(`Total HPP: Rp ${Math.round(totalKit).toLocaleString('id-ID')}`, 14, finalY);
+
+    // History Kitchen
+    historyDataKitchen.forEach(h => {
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.setTextColor(220, 38, 38);
+        doc.text(`Kitchen History: ${h.namaProduk || 'Tanpa Nama'}`, 14, 20);
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Disimpan: ${formatDateTime(h.timestamp)}`, 14, 26);
+
+        let hItems = h.bahanKalkulatorKitchen.filter(b => b.nama).map(b => {
+            let pakai = h.resepKalkulatorKitchen[b.id] || 0;
+            return { ...b, pakai, biaya: b.hpp * pakai };
+        });
+        
+        let hData = hItems.map(b => {
+            let yieldPct = (b.ap > 0) ? ((b.ep / b.ap) * 100).toFixed(1) : 0;
+            return [
+                b.nama, 
+                b.ap + ' gr', 
+                b.ep + ' gr', 
+                yieldPct + '%', 
+                'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'), 
+                b.pakai + ' gr', 
+                'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+            ];
+        });
+
+        doc.autoTable({
+            startY: 35,
+            head: headersKit,
+            body: hData,
+            theme: 'grid',
+            headStyles: { fillColor: [220, 38, 38] },
+            styles: { fontSize: 10 }
+        });
+        
+        finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(12);
+        doc.setTextColor(0);
+        doc.text(`Total HPP: Rp ${Math.round(h.totalBiaya).toLocaleString('id-ID')}`, 14, finalY);
+    });
+
+    doc.save(`Laporan_Lengkap_PerHalaman_${new Date().toISOString().slice(0,10)}.pdf`);
 }
 
 /* =========================================================================
@@ -812,6 +1693,7 @@ function renderHistory() {
                 <div class="text-sm text-gray-600"><span class="font-bold text-amber-600">${entry.namaProduk || 'Tanpa Nama'}</span> • HPP: Rp ${Math.round(entry.hppPerUnit).toLocaleString('id-ID')}</div>
             </div>
             <div class="flex gap-2">
+                <button onclick="previewHistorySnapshot(${entry.id}, 'pastry')" class="px-3 py-1.5 bg-purple-100 text-purple-600 rounded-md font-medium text-sm hover:bg-purple-200" title="Preview">👁️</button>
                 <button onclick="loadHistoryEntry(${entry.id})" class="px-3 py-1.5 bg-blue-500 text-white rounded-md font-medium text-sm hover:bg-blue-600">Buka</button>
                 <button onclick="deleteHistoryEntry(${entry.id})" class="px-3 py-1.5 bg-red-100 text-red-600 rounded-md font-medium text-sm hover:bg-red-200">Hapus</button>
             </div>
@@ -850,6 +1732,143 @@ function loadHistoryEntry(id) {
 function formatDateTime(iso) {
     const d = new Date(iso);
     return d.toLocaleString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+/* =========================================================================
+   RIWAYAT BEVERAGE LOGIC
+========================================================================= */
+let historyDataBev = [];
+const HISTORY_KEY_BEV = 'pastryPro_HistoryBev';
+
+function loadHistoryFromStorageBev() {
+    try {
+        const raw = localStorage.getItem(HISTORY_KEY_BEV);
+        historyDataBev = raw ? JSON.parse(raw) : [];
+    } catch (e) { historyDataBev = []; }
+}
+
+function saveHistoryBev() {
+    let totalBiaya = bahanKalkulatorBev.reduce((sum, b) => sum + (b.hpp * (resepKalkulatorBev[b.id] || 0)), 0);
+    const namaProduk = document.getElementById('namaProdukBev').value || 'Tanpa Nama';
+    
+    if (totalBiaya === 0) {
+        return alert('Tidak ada yang bisa disimpan. Kalkulator masih kosong.');
+    }
+
+    const snapshot = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        namaProduk,
+        totalBiaya,
+        bahanKalkulatorBev: JSON.parse(JSON.stringify(bahanKalkulatorBev)),
+        resepKalkulatorBev: JSON.parse(JSON.stringify(resepKalkulatorBev))
+    };
+
+    historyDataBev.unshift(snapshot);
+    try {
+        localStorage.setItem(HISTORY_KEY_BEV, JSON.stringify(historyDataBev));
+    } catch (e) {
+        alert('Gagal menyimpan riwayat: Memori penuh.');
+    }
+    renderHistoryBev();
+    alert('Riwayat beverage berhasil disimpan.');
+}
+
+function renderHistoryBev() {
+    const container = document.getElementById('historyListBev');
+    if (!container) return;
+    if (!historyDataBev || historyDataBev.length === 0) {
+        container.innerHTML = '<div class="p-4 text-center text-gray-500">Belum ada riwayat tersimpan.</div>';
+        return;
+    }
+    container.innerHTML = historyDataBev.map(entry => `
+        <div class="p-3 border rounded-lg flex justify-between items-center hover:bg-gray-50 transition">
+            <div>
+                <div class="font-semibold text-gray-800">${formatDateTime(entry.timestamp)}</div>
+                <div class="text-sm text-gray-600"><span class="font-bold text-teal-600">${entry.namaProduk || 'Tanpa Nama'}</span> • HPP: Rp ${Math.round(entry.totalBiaya).toLocaleString('id-ID')}</div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="previewHistorySnapshot(${entry.id}, 'beverage')" class="px-3 py-1.5 bg-purple-100 text-purple-600 rounded-md font-medium text-sm hover:bg-purple-200" title="Preview">👁️</button>
+                <button onclick="loadHistoryEntryBev(${entry.id})" class="px-3 py-1.5 bg-blue-500 text-white rounded-md font-medium text-sm hover:bg-blue-600">Buka</button>
+                <button onclick="deleteHistoryEntryBev(${entry.id})" class="px-3 py-1.5 bg-red-100 text-red-600 rounded-md font-medium text-sm hover:bg-red-200">Hapus</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function clearHistoryBev() {
+    if (!confirm('Hapus semua riwayat beverage?')) return;
+    historyDataBev = [];
+    localStorage.removeItem(HISTORY_KEY_BEV);
+    renderHistoryBev();
+}
+
+function deleteHistoryEntryBev(id) {
+    if (!confirm('Hapus riwayat ini?')) return;
+    historyDataBev = historyDataBev.filter(e => e.id !== id);
+    localStorage.setItem(HISTORY_KEY_BEV, JSON.stringify(historyDataBev));
+    renderHistoryBev();
+}
+
+function loadHistoryEntryBev(id) {
+    const entry = historyDataBev.find(e => e.id === id);
+    if (!entry) { alert('Riwayat tidak ditemukan.'); return; }
+    if (!confirm('Muat riwayat ini? Data saat ini akan diganti.')) return;
+    
+    bahanKalkulatorBev = JSON.parse(JSON.stringify(entry.bahanKalkulatorBev));
+    resepKalkulatorBev = JSON.parse(JSON.stringify(entry.resepKalkulatorBev));
+    document.getElementById('namaProdukBev').value = entry.namaProduk || '';
+    
+    renderKalkulatorBev();
+    document.getElementById('tabBeverage').scrollIntoView({ behavior: 'smooth' });
+}
+
+/* =========================================================================
+   RIWAYAT KITCHEN LOGIC
+========================================================================= */
+let historyDataKitchen = [];
+const HISTORY_KEY_KIT = 'pastryPro_HistoryKit';
+
+function loadHistoryFromStorageKitchen() {
+    try { const raw = localStorage.getItem(HISTORY_KEY_KIT); historyDataKitchen = raw ? JSON.parse(raw) : []; } catch (e) { historyDataKitchen = []; }
+}
+function saveHistoryKitchen() {
+    let totalBiaya = bahanKalkulatorKitchen.reduce((sum, b) => sum + (b.hpp * (resepKalkulatorKitchen[b.id] || 0)), 0);
+    const namaProduk = document.getElementById('namaProdukKitchen').value || 'Tanpa Nama';
+    if (totalBiaya === 0) return alert('Kalkulator kosong.');
+    const snapshot = {
+        id: Date.now(), timestamp: new Date().toISOString(), namaProduk, totalBiaya,
+        bahanKalkulatorKitchen: JSON.parse(JSON.stringify(bahanKalkulatorKitchen)),
+        resepKalkulatorKitchen: JSON.parse(JSON.stringify(resepKalkulatorKitchen))
+    };
+    historyDataKitchen.unshift(snapshot);
+    localStorage.setItem(HISTORY_KEY_KIT, JSON.stringify(historyDataKitchen));
+    renderHistoryKitchen(); alert('Riwayat Kitchen tersimpan.');
+}
+function renderHistoryKitchen() {
+    const container = document.getElementById('historyListKitchen');
+    if (!container) return;
+    if (!historyDataKitchen || historyDataKitchen.length === 0) { container.innerHTML = '<div class="p-4 text-center text-gray-500">Belum ada riwayat.</div>'; return; }
+    container.innerHTML = historyDataKitchen.map(entry => `
+        <div class="p-3 border rounded-lg flex justify-between items-center hover:bg-gray-50 transition">
+            <div><div class="font-semibold text-gray-800">${formatDateTime(entry.timestamp)}</div><div class="text-sm text-gray-600"><span class="font-bold text-red-600">${entry.namaProduk || 'Tanpa Nama'}</span> • Rp ${Math.round(entry.totalBiaya).toLocaleString('id-ID')}</div></div>
+            <div class="flex gap-2">
+                <button onclick="previewHistorySnapshot(${entry.id}, 'kitchen')" class="px-3 py-1.5 bg-purple-100 text-purple-600 rounded-md font-medium text-sm hover:bg-purple-200">👁️</button>
+                <button onclick="loadHistoryEntryKitchen(${entry.id})" class="px-3 py-1.5 bg-blue-500 text-white rounded-md font-medium text-sm hover:bg-blue-600">Buka</button>
+                <button onclick="deleteHistoryEntryKitchen(${entry.id})" class="px-3 py-1.5 bg-red-100 text-red-600 rounded-md font-medium text-sm hover:bg-red-200">Hapus</button>
+            </div>
+        </div>`).join('');
+}
+function clearHistoryKitchen() { if(confirm('Hapus semua?')) { historyDataKitchen=[]; localStorage.removeItem(HISTORY_KEY_KIT); renderHistoryKitchen(); } }
+function deleteHistoryEntryKitchen(id) { if(confirm('Hapus?')) { historyDataKitchen=historyDataKitchen.filter(e=>e.id!==id); localStorage.setItem(HISTORY_KEY_KIT, JSON.stringify(historyDataKitchen)); renderHistoryKitchen(); } }
+function loadHistoryEntryKitchen(id) {
+    const entry = historyDataKitchen.find(e => e.id === id);
+    if(!entry) return;
+    if(!confirm('Muat riwayat ini?')) return;
+    bahanKalkulatorKitchen = JSON.parse(JSON.stringify(entry.bahanKalkulatorKitchen));
+    resepKalkulatorKitchen = JSON.parse(JSON.stringify(entry.resepKalkulatorKitchen));
+    document.getElementById('namaProdukKitchen').value = entry.namaProduk || '';
+    renderKalkulatorKitchen(); document.getElementById('tabKitchen').scrollIntoView({behavior:'smooth'});
 }
 
 /* =========================================================================
@@ -1045,9 +2064,19 @@ function initApp() {
     loadMasterDB();
     for(let i=0; i<3; i++) tambahBahanKalkulator();
     renderKalkulator();
+    for(let i=0; i<3; i++) tambahBahanBev();
+    renderKalkulatorBev();
+    for(let i=0; i<3; i++) tambahBahanKitchen();
+    renderKalkulatorKitchen();
     
     loadHistoryFromStorage();
     renderHistory();
+
+    loadHistoryFromStorageBev();
+    renderHistoryBev();
+
+    loadHistoryFromStorageKitchen();
+    renderHistoryKitchen();
     
     setupPicker($('#pickH'), 23, 0); setupPicker($('#pickM'), 59, 20); setupPicker($('#pickS'), 59, 0);
     renderTimerNav();
@@ -1056,6 +2085,266 @@ function initApp() {
 
 // Inisialisasi awal saat load
 renderTimerNav();
+
+/* =========================================================================
+   PREVIEW EXCEL LOGIC
+========================================================================= */
+function openExcelPreview() {
+    document.getElementById('excelPreviewModal').classList.remove('hidden');
+    document.getElementById('previewTabs').classList.remove('hidden');
+    document.getElementById('btnDownloadExcel').classList.remove('hidden');
+    document.querySelector('#excelPreviewModal h3').textContent = 'Preview Data Excel';
+    switchPreviewTab('db');
+}
+function closeExcelPreview() {
+    document.getElementById('excelPreviewModal').classList.add('hidden');
+}
+function switchPreviewTab(tab) {
+    // Update Style Tombol Tab
+    ['db', 'pastry', 'bev', 'kitchen'].forEach(t => {
+        const btn = document.getElementById('btnPrev' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (t === tab) {
+            btn.className = "flex-1 py-3 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 bg-blue-50 transition-colors";
+        } else {
+            btn.className = "flex-1 py-3 font-semibold text-sm text-gray-500 hover:bg-gray-50 transition-colors";
+        }
+    });
+
+    // Generate Data untuk Preview
+    const container = document.getElementById('previewContent');
+    let headers = [], rows = [];
+
+    if (tab === 'db') {
+        headers = ["Nama Bahan", "Berat Beli", "Harga Beli", "HPP per Unit"];
+        rows = masterDB.map(item => [item.nama, item.berat + ' gr', 'Rp ' + item.harga.toLocaleString('id-ID'), 'Rp ' + Math.round(item.hpp || 0).toLocaleString('id-ID')]);
+        if(rows.length === 0) rows = [["(Database Kosong)", "-", "-", "-"]];
+    } 
+    else if (tab === 'pastry') {
+        headers = ["Bahan", "Berat Beli", "Harga Beli", "HPP Dasar", "Resep (gr)", "Biaya (Rp)"];
+        let rawItems = bahanKalkulator.filter(b => b.nama).map(b => {
+            let pakai = resepKalkulator[b.id] || 0;
+            return { ...b, pakai, biaya: b.hpp * pakai };
+        });
+        let total = rawItems.reduce((a,b)=>a+b.biaya,0);
+        let unit = parseFloat(document.getElementById('jumlahUnitKalkulator').value)||1;
+        
+        rows.push(["<strong>[KALKULATOR AKTIF]</strong>", "", "", "", "", ""]);
+        
+        rawItems.forEach(b => {
+            rows.push([
+                b.nama, 
+                b.berat + ' gr', 
+                'Rp ' + b.harga.toLocaleString('id-ID'), 
+                'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'), 
+                b.pakai, 
+                'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+            ]);
+        });
+
+        rows.push(["---", "---", "---", "---", "---", "---"]);
+        rows.push(["<strong>TOTAL BIAYA</strong>", "", "", "", "", `<strong>Rp ${total.toLocaleString('id-ID')}</strong>`]);
+        rows.push(["<strong>HPP PER UNIT</strong>", "", "", "", "", `<strong>Rp ${Math.round(total/unit).toLocaleString('id-ID')}</strong>`]);
+        
+        // Append History Pastry
+        if(historyData.length > 0) {
+            rows.push(["", "", "", "", "", ""]);
+            rows.push(["<strong>[RIWAYAT TERSIMPAN]</strong>", "", "", "", "", ""]);
+            
+            historyData.forEach(h => {
+                rows.push(["", "", "", "", "", ""]);
+                rows.push([`<strong>📂 ${h.namaProduk || 'Tanpa Nama'}</strong>`, `<em>${formatDateTime(h.timestamp)}</em>`, "", "", "", ""]);
+                
+                let hItems = h.bahanKalkulator.filter(b => b.nama).map(b => {
+                    let pakai = h.resepKalkulator[b.id] || 0;
+                    return { ...b, pakai, biaya: b.hpp * pakai };
+                });
+                
+                hItems.forEach(b => {
+                    rows.push([
+                        b.nama, 
+                        b.berat + ' gr', 
+                        'Rp ' + b.harga.toLocaleString('id-ID'), 
+                        'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'), 
+                        b.pakai, 
+                        'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+                    ]);
+                });
+                
+                rows.push(["---", "---", "---", "---", "---", "---"]);
+                rows.push(["<strong>TOTAL BIAYA</strong>", "", "", "", "", `<strong>Rp ${Math.round(h.totalBiaya).toLocaleString('id-ID')}</strong>`]);
+                rows.push(["<strong>HPP PER UNIT</strong>", "", "", "", "", `<strong>Rp ${Math.round(h.hppPerUnit).toLocaleString('id-ID')}</strong>`]);
+            });
+        }
+    }
+    else if (tab === 'bev') {
+        headers = ["Bahan", "Berat Beli", "Harga Beli", "HPP Dasar", "Resep (gr/ml)", "Biaya (Rp)"];
+        let rawItems = bahanKalkulatorBev.filter(b => b.nama).map(b => {
+            let pakai = resepKalkulatorBev[b.id] || 0;
+            return { ...b, pakai, biaya: b.hpp * pakai };
+        });
+        let total = rawItems.reduce((a,b)=>a+b.biaya,0);
+
+        rows.push(["<strong>[KALKULATOR AKTIF]</strong>", "", "", "", "", ""]);
+
+        rawItems.forEach(b => {
+            rows.push([
+                b.nama,
+                b.berat + ' gr/ml',
+                'Rp ' + b.harga.toLocaleString('id-ID'),
+                'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'),
+                b.pakai,
+                'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+            ]);
+        });
+
+        rows.push(["---", "---", "---", "---", "---", "---"]);
+        rows.push(["<strong>TOTAL HPP</strong>", "", "", "", "", `<strong>Rp ${Math.round(total).toLocaleString('id-ID')}</strong>`]);
+        
+        // Append History Beverage
+        if(historyDataBev.length > 0) {
+            rows.push(["", "", "", "", "", ""]);
+            rows.push(["<strong>[RIWAYAT TERSIMPAN]</strong>", "", "", "", "", ""]);
+            
+            historyDataBev.forEach(h => {
+                rows.push(["", "", "", "", "", ""]);
+                rows.push([`<strong>📂 ${h.namaProduk || 'Tanpa Nama'}</strong>`, `<em>${formatDateTime(h.timestamp)}</em>`, "", "", "", ""]);
+                
+                let hItems = h.bahanKalkulatorBev.filter(b => b.nama).map(b => {
+                    let pakai = h.resepKalkulatorBev[b.id] || 0;
+                    return { ...b, pakai, biaya: b.hpp * pakai };
+                });
+                
+                hItems.forEach(b => {
+                    rows.push([
+                        b.nama,
+                        b.berat + ' gr/ml',
+                        'Rp ' + b.harga.toLocaleString('id-ID'),
+                        'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'),
+                        b.pakai,
+                        'Rp ' + Math.round(b.biaya).toLocaleString('id-ID')
+                    ]);
+                });
+
+                rows.push(["---", "---", "---", "---", "---", "---"]);
+                rows.push(["<strong>TOTAL HPP</strong>", "", "", "", "", `<strong>Rp ${Math.round(h.totalBiaya).toLocaleString('id-ID')}</strong>`]);
+            });
+        }
+    }
+    else if (tab === 'kitchen') {
+        headers = ["Bahan", "AP (gr)", "EP (gr)", "Yield %", "Harga AP", "HPP Bersih", "Resep", "Biaya"];
+        let rawItems = bahanKalkulatorKitchen.filter(b => b.nama).map(b => {
+            let pakai = resepKalkulatorKitchen[b.id] || 0;
+            return { ...b, pakai, biaya: b.hpp * pakai };
+        });
+        let total = rawItems.reduce((a,b)=>a+b.biaya,0);
+        rows.push(["<strong>[KALKULATOR AKTIF]</strong>", "", "", "", "", "", "", ""]);
+        rawItems.forEach(b => {
+            let yieldPct = (b.ap > 0) ? ((b.ep / b.ap) * 100).toFixed(1) : 0;
+            rows.push([b.nama, b.ap, b.ep, yieldPct+'%', 'Rp '+b.harga.toLocaleString('id-ID'), 'Rp '+Math.round(b.hpp).toLocaleString('id-ID'), b.pakai, 'Rp '+Math.round(b.biaya).toLocaleString('id-ID')]);
+        });
+        rows.push(["---", "---", "---", "---", "---", "---", "---", "---"]);
+        rows.push(["<strong>TOTAL HPP</strong>", "", "", "", "", "", "", `<strong>Rp ${Math.round(total).toLocaleString('id-ID')}</strong>`]);
+        
+        if(historyDataKitchen.length > 0) {
+            rows.push(["", "", "", "", "", "", "", ""]);
+            rows.push(["<strong>[RIWAYAT TERSIMPAN]</strong>", "", "", "", "", "", "", ""]);
+            historyDataKitchen.forEach(h => {
+                rows.push(["", "", "", "", "", "", "", ""]);
+                rows.push([`<strong>📂 ${h.namaProduk || 'Tanpa Nama'}</strong>`, `<em>${formatDateTime(h.timestamp)}</em>`, "", "", "", "", "", ""]);
+                let hItems = h.bahanKalkulatorKitchen.filter(b => b.nama).map(b => { let pakai = h.resepKalkulatorKitchen[b.id] || 0; return { ...b, pakai, biaya: b.hpp * pakai }; });
+                hItems.forEach(b => {
+                    let yieldPct = (b.ap > 0) ? ((b.ep / b.ap) * 100).toFixed(1) : 0;
+                    rows.push([b.nama, b.ap, b.ep, yieldPct+'%', 'Rp '+b.harga.toLocaleString('id-ID'), 'Rp '+Math.round(b.hpp).toLocaleString('id-ID'), b.pakai, 'Rp '+Math.round(b.biaya).toLocaleString('id-ID')]);
+                });
+            });
+        }
+    }
+
+    // Render Tabel HTML
+    container.innerHTML = `
+        <div class="bg-white shadow-sm overflow-hidden border-b border-gray-200">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-gray-100 text-gray-700 uppercase font-bold text-xs sticky top-0 shadow-sm"><tr>${headers.map(h => `<th class="px-6 py-4 border-b whitespace-nowrap">${h}</th>`).join('')}</tr></thead>
+                <tbody class="divide-y divide-gray-200 bg-white">${rows.map(r => `<tr class="hover:bg-blue-50 transition-colors">${r.map(c => `<td class="px-6 py-3 border-r last:border-r-0 whitespace-nowrap">${c !== null ? c : ''}</td>`).join('')}</tr>`).join('')}</tbody>
+            </table>
+        </div>`;
+}
+
+function previewHistorySnapshot(id, type) {
+    const dataList = type === 'pastry' ? historyData : (type === 'beverage' ? historyDataBev : historyDataKitchen);
+    const entry = dataList.find(e => e.id === id);
+    if (!entry) return;
+
+    document.getElementById('excelPreviewModal').classList.remove('hidden');
+    document.getElementById('previewTabs').classList.remove('hidden'); 
+    document.getElementById('btnDownloadExcel').classList.remove('hidden'); 
+    document.querySelector('#excelPreviewModal h3').textContent = `Preview Riwayat: ${entry.namaProduk || 'Tanpa Nama'}`;
+
+    // Highlight tab yang sesuai
+    const tabName = type === 'pastry' ? 'pastry' : (type === 'beverage' ? 'bev' : 'kitchen');
+    ['db', 'pastry', 'bev', 'kitchen'].forEach(t => {
+        const btn = document.getElementById('btnPrev' + t.charAt(0).toUpperCase() + t.slice(1));
+        if(btn) btn.className = (t === tabName) ? 
+            "flex-1 py-3 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 bg-blue-50 transition-colors" : 
+            "flex-1 py-3 font-semibold text-sm text-gray-500 hover:bg-gray-100 transition-colors";
+    });
+
+    const container = document.getElementById('previewContent');
+    let headers = [], rows = [];
+
+    if (type === 'pastry') {
+        headers = ["Bahan", "Berat Beli", "Harga Beli", "HPP Dasar", "Resep (gr)", "Biaya (Rp)"];
+        rows = entry.bahanKalkulator.filter(b => b.nama).map(b => {
+            let pakai = entry.resepKalkulator[b.id] || 0;
+            return [
+                b.nama, 
+                b.berat + ' gr', 
+                'Rp ' + b.harga.toLocaleString('id-ID'), 
+                'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'), 
+                pakai, 
+                'Rp ' + Math.round(b.hpp * pakai).toLocaleString('id-ID')
+            ];
+        });
+        rows.push(["---", "---", "---", "---", "---", "---"]);
+        rows.push(["<strong>TOTAL BIAYA</strong>", "", "", "", "", `<strong>Rp ${Math.round(entry.totalBiaya).toLocaleString('id-ID')}</strong>`]);
+        rows.push(["<strong>JUMLAH UNIT</strong>", "", "", "", "", `<strong>${entry.jumlahUnit}</strong>`]);
+        rows.push(["<strong>HPP PER UNIT</strong>", "", "", "", "", `<strong>Rp ${Math.round(entry.hppPerUnit).toLocaleString('id-ID')}</strong>`]);
+    } 
+    else if (type === 'beverage') {
+        headers = ["Bahan", "Berat Beli", "Harga Beli", "HPP Dasar", "Resep (gr/ml)", "Biaya (Rp)"];
+        rows = entry.bahanKalkulatorBev.filter(b => b.nama).map(b => {
+            let pakai = entry.resepKalkulatorBev[b.id] || 0;
+            return [
+                b.nama, 
+                b.berat + ' gr/ml', 
+                'Rp ' + b.harga.toLocaleString('id-ID'), 
+                'Rp ' + Math.round(b.hpp).toLocaleString('id-ID'), 
+                pakai, 
+                'Rp ' + Math.round(b.hpp * pakai).toLocaleString('id-ID')
+            ];
+        });
+        rows.push(["---", "---", "---", "---", "---", "---"]);
+        rows.push(["<strong>TOTAL HPP</strong>", "", "", "", "", `<strong>Rp ${Math.round(entry.totalBiaya).toLocaleString('id-ID')}</strong>`]);
+    }
+    else if (type === 'kitchen') {
+        headers = ["Bahan", "AP (gr)", "EP (gr)", "Yield %", "Harga AP", "HPP Bersih", "Resep", "Biaya"];
+        rows = entry.bahanKalkulatorKitchen.filter(b => b.nama).map(b => {
+            let pakai = entry.resepKalkulatorKitchen[b.id] || 0;
+            let yieldPct = (b.ap > 0) ? ((b.ep / b.ap) * 100).toFixed(1) : 0;
+            return [b.nama, b.ap, b.ep, yieldPct+'%', 'Rp '+b.harga.toLocaleString('id-ID'), 'Rp '+Math.round(b.hpp).toLocaleString('id-ID'), pakai, 'Rp '+Math.round(b.hpp * pakai).toLocaleString('id-ID')];
+        });
+        rows.push(["---", "---", "---", "---", "---", "---", "---", "---"]);
+        rows.push(["<strong>TOTAL HPP</strong>", "", "", "", "", "", "", `<strong>Rp ${Math.round(entry.totalBiaya).toLocaleString('id-ID')}</strong>`]);
+    }
+
+    container.innerHTML = `
+        <div class="bg-white shadow-sm overflow-hidden border-b border-gray-200">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-gray-100 text-gray-700 uppercase font-bold text-xs sticky top-0 shadow-sm"><tr>${headers.map(h => `<th class="px-6 py-4 border-b whitespace-nowrap">${h}</th>`).join('')}</tr></thead>
+                <tbody class="divide-y divide-gray-200 bg-white">${rows.map(r => `<tr class="hover:bg-blue-50 transition-colors">${r.map(c => `<td class="px-6 py-3 border-r last:border-r-0 whitespace-nowrap">${c !== null ? c : ''}</td>`).join('')}</tr>`).join('')}</tbody>
+            </table>
+        </div>`;
+}
 </script>
 </body>
 </html>
